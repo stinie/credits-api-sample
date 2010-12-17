@@ -1,0 +1,15 @@
+README 
+====== 
+ 
+Preparing Your Application: 
+- Select your application from the right-hand menu on http://www.facebook.com/developers 
+- Click "Edit Settings"  
+- Click "Advanced" from the left-hand menu and set "OAuth 2.0 for Canvas" to "Enabled" 
+- Click "Save Changes" 
+- Click "Credits" from the left-hand menu and enter all relevant information. 
+
+Passing Product Information:
+The purpose of this example is to demonstrate basic functionality of a credits transaction.  For purposes of clarity and ease, this example passes critical parameters such as a price in the transaction directly.  In order to prevent users from manipulating these fields through Firebug, you should only pass an internal key that points to a products table in your database that stores information such as price and product type.  For example, if you pass "332" your callback.php script would perform a lookup of that value to return the proper item information.
+
+Accessing Your Demo Application:
+Point your browser to your Facebook test app at http://apps.facebook.com/[your-test-app]
