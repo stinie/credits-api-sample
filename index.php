@@ -80,7 +80,7 @@ define('APP_ID', 'abc123');
 
       // calling the API ...
       var obj = {
-	    method: 'pay.prompt',
+	    method: 'pay',
 	    order_info: order_info,
 	    purchase_type: 'item'
       };
