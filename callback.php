@@ -64,7 +64,7 @@ if ($func == 'payments_status_update') {
   }
    
   // prefix test-mode
-  if ($payload['test_mode']) {
+  if (isset($payload['test_mode'])) {
     $update_keys = array('title', 'description');
     foreach ($update_keys as $key) {
       $item[$key] = '[Test Mode] '.$item[$key];
