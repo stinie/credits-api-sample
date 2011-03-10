@@ -50,27 +50,50 @@ if ($func == 'payments_status_update') {
   $data['content']['order_id'] = $order_id;
 
 } else if ($func == 'payments_get_items') {
+
   // remove escape characters  
   $order_info = stripcslashes($payload['order_info']);
-  $item = json_decode($order_info, true);
-  $item['price'] = (int)$item['price'];
+  if (is_string($order_info)) {	
 
-  // for url fields, if not prefixed by http://, prefix them
-  $url_key = array('product_url', 'image_url');  
-  foreach ($url_key as $key) {
-    if (substr($item[$key], 0, 7) != 'http://') {
-       $item[$key] = 'http://'.$item[$key];
+     // Per the credits api documentation, you should pass in an item reference
+     // and then query your internal DB for the proper information. Then set 
+     // the item information here to be returned to facebook then shown to the 
+     // user for confirmation.
+     $item['title'] = 'BFF Locket';
+     $item['price'] = 1;
+     $item['description'] = 'This is a BFF Locket...';
+     $item['image_url'] = 'http://www.facebook.com/images/gifts/21.png';
+     $item['product_url'] = 'http://www.facebook.com/images/gifts/21.png';
+  } else {
+
+    // In the sample credits application we allow the developer to enter the
+    // information for easy testing. Please note that this information can be
+    // modified by the user if not verified by your callback. When using
+    // credits in a production environment be sure to pass an order ID and 
+    // contruct item information in the callback, rather than passing it
+    // from the parent call in order_info.
+    $item = json_decode($order_info, true);
+    $item['price'] = (int)$item['price'];
+
+    // for url fields, if not prefixed by http://, prefix them
+    $url_key = array('product_url', 'image_url');  
+    foreach ($url_key as $key) {
+      if (substr($item[$key], 0, 7) != 'http://') {
+        $item[$key] = 'http://'.$item[$key];
+      }
     }
-  }
-   
-  // prefix test-mode
-  if (isset($payload['test_mode'])) {
-    $update_keys = array('title', 'description');
-    foreach ($update_keys as $key) {
-      $item[$key] = '[Test Mode] '.$item[$key];
-    }
+
+    // prefix test-mode
+    if (isset($payload['test_mode'])) {
+       $update_keys = array('title', 'description');
+       foreach ($update_keys as $key) {
+         $item[$key] = '[Test Mode] '.$item[$key];
+       }
+     }
   }
 
+  // Put the associate array of item details in an array, and return in the
+  // 'content' portion of the callback payload.
   $data['content'] = array($item);
 }
 
