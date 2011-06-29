@@ -17,7 +17,6 @@
    */
 
 // Enter your app information below 
-$api_key = '<api key>';
 $secret = '<secret>';
 
 include_once 'facebook.php';

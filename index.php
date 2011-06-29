@@ -71,6 +71,8 @@ define('APP_ID', 'abc123');
       var img_url = document.getElementById('img_el').value;
       var product_url = document.getElementById('product_el').value;
 
+      // Only send param data for sample. These parameters should be set
+      // in the callback.
       var order_info = { "title":title,
                          "description":desc,
                          "price":price,
