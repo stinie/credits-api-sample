@@ -1,131 +1,121 @@
 <?php
-// Copyright 2004-2011 Facebook. All Rights Reserved.
+  // Copyright 2004-Present Facebook. All Rights Reserved.
 
-/**
-   * You should reference http://developers.facebook.com/docs/creditsapi as you
-   * familiarize yourself with callback.php. In particular, read all the steps
-   * under "Callback Flow in Detail".
-   *
-   * Your application needs the following inputs and outputs
-   *
-   * @param int order_id             
-   * @param string status
-   * @param string method
-   * @param array order_details (JSON-encoded)
-   *
-   * @return array A JSON-encoded array with order_id, next_state (optional: error code, comments)
-   */
+  /**
+  * You should reference http://developers.facebook.com/docs/credits/ as you
+  * familiarize yourself with callback.php. In particular, read all the steps
+  * under "Credits Tutorial" and "Credits Callback".
+  *
+  * Your application needs the following inputs and outputs
+  *
+  * @param int order_id
+  * @param string status
+  * @param string method
+  * @param array order_details (JSON-encoded)
+  *
+  * @return array A JSON-encoded array with order_id, next_state (optional: error code, comments)
+  */
 
-// Enter your app information below 
-$secret = '<secret>';
+  // Enter your app information below
+  $app_secret = '<app_secret>';
 
-include_once 'facebook.php';
+  // Prepare the return data array
+  $data = array('content' => array());
 
-// prepare the return data array
-$data = array('content' => array());
+  // Parse the signed_request to verify it's from Facebook
+  $request = parse_signed_request($_REQUEST['signed_request'], $app_secret);
 
-// parse signed data
-$request = parse_signed_request($_REQUEST['signed_request'], $secret);
-
-if ($request == null) {
-  // handle an unauthenticated request here
-}
-
-$payload = $request['credits'];
-
-// retrieve all params passed in
-$func = $_REQUEST['method'];
-$order_id = $payload['order_id'];
-
-if ($func == 'payments_status_update') {
-  $status = $payload['status'];
-
-  // write your logic here, determine the state you wanna move to
-  if ($status == 'placed') {
-    $next_state = 'settled';
-    $data['content']['status'] = $next_state;
+  if ($request == null) {
+    // Handle an unauthenticated request here
   }
-  // compose returning data array_change_key_case
-  $data['content']['order_id'] = $order_id;
 
-} else if ($func == 'payments_get_items') {
+  // Grab the payload
+  $payload = $request['credits'];
 
-  // remove escape characters  
-  $order_info = stripcslashes($payload['order_info']);
-  if (is_string($order_info)) {	
+  // Retrieve all params passed in
+  $func = $_REQUEST['method'];
+  $order_id = $payload['order_id'];
 
-     // Per the credits api documentation, you should pass in an item reference
-     // and then query your internal DB for the proper information. Then set 
-     // the item information here to be returned to facebook then shown to the 
-     // user for confirmation.
-     $item['title'] = 'BFF Locket';
-     $item['price'] = 1;
-     $item['description'] = 'This is a BFF Locket...';
-     $item['image_url'] = 'http://www.facebook.com/images/gifts/21.png';
-     $item['product_url'] = 'http://www.facebook.com/images/gifts/21.png';
-  } else {
+  if ($func == 'payments_status_update') {
 
-    // In the sample credits application we allow the developer to enter the
-    // information for easy testing. Please note that this information can be
-    // modified by the user if not verified by your callback. When using
-    // credits in a production environment be sure to pass an order ID and 
-    // contruct item information in the callback, rather than passing it
-    // from the parent call in order_info.
-    $item = json_decode($order_info, true);
-    $item['price'] = (int)$item['price'];
+    // Grab the order status
+    $status = $payload['status'];
 
-    // for url fields, if not prefixed by http://, prefix them
-    $url_key = array('product_url', 'image_url');  
-    foreach ($url_key as $key) {
-      if (substr($item[$key], 0, 7) != 'http://') {
-        $item[$key] = 'http://'.$item[$key];
-      }
+    // Write your apps logic here for validating and recording a
+    // purchase here.
+    // 
+    // Generally you will want to move states from `placed` -> `settled`
+    // here, then grant the purchasing user's in-game item to them.
+    if ($status == 'placed') {
+      $next_state = 'settled';
+      $data['content']['status'] = $next_state;
     }
 
-    // prefix test-mode
-    if (isset($payload['test_mode'])) {
-       $update_keys = array('title', 'description');
-       foreach ($update_keys as $key) {
-         $item[$key] = '[Test Mode] '.$item[$key];
-       }
-     }
+    // Compose returning data array_change_key_case
+    $data['content']['order_id'] = $order_id;
+
+  } else if ($func == 'payments_get_items') {
+    // remove escape characters
+    $order_info = stripcslashes($payload['order_info']);
+    $item_info = json_decode($order_info, true);
+    if ($item_info == "abc123") {
+
+      // Per the credits api documentation, you should pass in an item 
+      // reference and then query your internal DB for the proper 
+      // information. Then set the item information here to be 
+      // returned to facebook then shown to the user for confirmation.
+      $item['title'] = 'BFF Locket';
+      $item['price'] = 1;
+      $item['description'] = 'This is a BFF Locket...';
+      $item['image_url'] = 'http://www.facebook.com/images/gifts/21.png';
+      $item['product_url'] = 'http://www.facebook.com/images/gifts/21.png';
+    } else {
+
+      // For the sake of the sample, we will default to this item if 
+      // the `order_info` reference passed from your JS call is not matched 
+      // above.
+      $item['title'] = 'A Facebook Hat';
+      $item['price'] = 1;
+      $item['description'] = 'The coolest hat you\'ve ever seen.';
+      $item['image_url'] = 'http://www.facebook.com/images/gifts/740.png';
+      $item['product_url'] = 'http://www.facebook.com/images/gifts/740.png';
+    }
+
+    // Put the associate array of item details in an array, and return in the
+    // 'content' portion of the callback payload.
+    $data['content'] = array($item);
   }
 
-  // Put the associate array of item details in an array, and return in the
-  // 'content' portion of the callback payload.
-  $data['content'] = array($item);
-}
+  // Required by api_fetch_response()
+  $data['method'] = $func;
 
-// required by api_fetch_response()
-$data['method'] = $func;
+  // Send data back
+  echo json_encode($data);
 
-// send data back
-echo json_encode($data);
+  // You can find the following functions and more details
+  // on http://developers.facebook.com/docs/authentication/canvas.
+  function parse_signed_request($signed_request, $app_secret) {
+    list($encoded_sig, $payload) = explode('.', $signed_request, 2);
 
-// you can find the following functions and more details
-// on http://developers.facebook.com/docs/authentication/canvas
-function parse_signed_request($signed_request, $secret) {
-  list($encoded_sig, $payload) = explode('.', $signed_request, 2);
+    // Decode the data
+    $sig = base64_url_decode($encoded_sig);
+    $data = json_decode(base64_url_decode($payload), true);
 
-  // decode the data
-  $sig = base64_url_decode($encoded_sig);
-  $data = json_decode(base64_url_decode($payload), true);
+    if (strtoupper($data['algorithm']) !== 'HMAC-SHA256') {
+      error_log('Unknown algorithm. Expected HMAC-SHA256');
+      return null;
+    }
 
-  if (strtoupper($data['algorithm']) !== 'HMAC-SHA256') {
-    error_log('Unknown algorithm. Expected HMAC-SHA256');
-    return null;
+    // Check signature
+    $expected_sig = hash_hmac('sha256', $payload, $app_secret, $raw = true);
+    if ($sig !== $expected_sig) {
+      error_log('Bad Signed JSON signature!');
+      return null;
+    }
+
+    return $data;
   }
 
-  // check signature
-  $expected_sig = hash_hmac('sha256', $payload, $secret, $raw = true);
-  if ($sig !== $expected_sig) {
-    error_log('Bad Signed JSON signature!');
-    return null;
+  function base64_url_decode($input) {
+    return base64_decode(strtr($input, '-_', '+/'));
   }
-
-  return $data;
-}
-
-function base64_url_decode($input) {
-  return base64_decode(strtr($input, '-_', '+/'));
-}
